@@ -20,7 +20,7 @@
     "rules": {
       "recommended": true,
       "correctness": {
-        "noChildrenProp": "off"
+        "useImportExtensions": "error"
       }
     }
   },

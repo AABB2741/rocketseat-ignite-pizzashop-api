@@ -2,6 +2,9 @@ import z from "zod";
 
 const envSchema = z.object({
   PORT: z.coerce.number().default(3333),
+  JWT_SECRET: z.string(),
+  API_BASE_URL: z.url(),
+  AUTH_REDIRECT_URL: z.url(),
   DATABASE_URL: z.url(),
 });
 

@@ -1,41 +1,35 @@
-import Elysia from "elysia";
-import { z } from "zod";
+import cookie from "@elysiajs/cookie";
+import jwt from "@elysiajs/jwt";
+import openapi from "@elysiajs/openapi";
+import Elysia, { t } from "elysia";
+import z from "zod";
 
-import { restaurants, users } from "./db/schema/index.ts";
-import { db } from "./lib/drizzle.ts";
+import { env } from "./env.ts";
+import { registerRestaurant } from "./http/routes/register-restaurant.ts";
+import { sendAuthLink } from "./http/routes/send-auth-link.ts";
 
-const app = new Elysia().get("/", "Ok").post(
-  "/restaurants",
-  async ({ status, body }) => {
-    const { restaurantName, managerName, email, phone } = body;
-
-    const [manager] = await db
-      .insert(users)
-      .values({
-        name: managerName,
-        email,
-        phone,
-        role: "manager",
-      })
-      .returning();
-
-    await db.insert(restaurants).values({
-      name: restaurantName,
-      managerId: manager?.id,
-    });
-
-    return status(204);
-  },
-  {
-    body: z.object({
-      restaurantName: z.string(),
-      managerName: z.string(),
-      phone: z.string(),
-      email: z.email(),
+const app = new Elysia()
+  .use(
+    openapi({
+      path: "/docs",
+      mapJsonSchema: {
+        zod: z.toJSONSchema,
+      },
     }),
-    response: {},
-  },
-);
+  )
+  .use(
+    jwt({
+      secret: env.JWT_SECRET,
+      schema: t.Object({
+        sub: t.String(),
+        restaurantId: t.Optional(t.String()),
+      }),
+    }),
+  )
+  .use(cookie())
+  .get("/", "Ok")
+  .use(registerRestaurant)
+  .use(sendAuthLink);
 
 app.listen(3333, () => {
   console.log("Server running at http://localhost:3333");
